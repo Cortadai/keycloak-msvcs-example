@@ -84,3 +84,7 @@ gradlew.bat
 *.temp
 tmp/
 temp/
+
+# claude
+.claude
+.serena
