@@ -1,0 +1,194 @@
+# ===============================================
+# CONFIGURACIÓN DEL API GATEWAY
+# ===============================================
+# El Gateway es el punto de entrada ÚNICO a todos los microservicios
+# Aquí es donde se hace la PRIMERA validación del JWT
+
+server:
+  port: 8081
+
+spring:
+  application:
+    name: gateway
+
+  # ===============================================
+  # CLOUD GATEWAY - Routing Configuration
+  # ===============================================
+  cloud:
+    gateway:
+      # ==========================================
+      # RUTAS - Definen cómo enrutar requests
+      # ==========================================
+      routes:
+        # ==========================================
+        # RUTA 1: User Service
+        # ==========================================
+        - id: user-service
+          # Destino: user-service registrado en Eureka
+          # lb:// = load balanced (Eureka resuelve la IP)
+          uri: lb://user-service
+
+          # Predicados: cuándo aplicar esta ruta
+          predicates:
+            - Path=/api/users/**
+
+          # Filtros: modificar el request antes de enviarlo
+          filters:
+            # NO reescribir path - mantener /api porque el microservicio
+            # tiene context-path: /api configurado
+
+            # 🔐 JWT Propagation Filter (custom)
+            # Este filtro AGREGA el JWT al header del request interno
+            - name: JWTPropagation
+
+        # ==========================================
+        # RUTA 2: Product Service
+        # ==========================================
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - name: JWTPropagation
+
+        # ==========================================
+        # RUTA 3: Order Service
+        # ==========================================
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: JWTPropagation
+
+      # ==========================================
+      # GLOBAL FILTERS - Aplican a TODAS las rutas
+      # ==========================================
+      default-filters: []
+        # Rate Limiting (prevenir abuse) - DESACTIVADO (requiere Redis)
+        # Para activarlo, descomentar y agregar dependencia spring-boot-starter-data-redis-reactive
+        # - name: RequestRateLimiter
+        #   args:
+        #     redis-rate-limiter:
+        #       replenishRate: 10  # 10 requests per second
+        #       burstCapacity: 20  # burst de hasta 20
+
+      # ==========================================
+      # DISCOVERY - Integración con Eureka
+      # ==========================================
+      discovery:
+        locator:
+          enabled: true  # Habilita rutas automáticas basadas en Eureka
+          lower-case-service-id: true
+
+# ===============================================
+# 🔐 SEGURIDAD - JWT VALIDATION EN GATEWAY
+# ===============================================
+# Esta configuración hace que el Gateway valide TODOS los JWT
+# ANTES de enrutar a los microservicios
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Heredado de application.yml (Config Server)
+          # issuer-uri: http://localhost:8080/realms/mi-realm
+          # jwk-set-uri: http://localhost:8080/realms/mi-realm/protocol/openid-connect/certs
+
+          # Configuración adicional específica del Gateway
+          # (si es necesario)
+
+# ===============================================
+# CIRCUIT BREAKER - Resilience4j
+# ===============================================
+# Si un microservicio falla, el Circuit Breaker lo detecta
+# y evita enviarle más requests (fail fast)
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        # Configuración por defecto para todos los circuit breakers
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10000  # 10 segundos
+        permitted-number-of-calls-in-half-open-state: 3
+
+    instances:
+      # Circuit breaker específico para user-service
+      user-service:
+        base-config: default
+
+      product-service:
+        base-config: default
+
+      order-service:
+        base-config: default
+
+  # Configuración de Retry (reintentos)
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 1000  # 1 segundo entre reintentos
+
+# ===============================================
+# LOGGING - Logs específicos del Gateway
+# ===============================================
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: DEBUG
+    reactor.netty: INFO
+
+# ===============================================
+# ¿CÓMO FUNCIONA EL FLUJO DE JWT EN EL GATEWAY?
+# ===============================================
+#
+# 1. REQUEST LLEGA AL GATEWAY
+#    POST http://localhost:8081/api/users/me
+#    Header: Authorization: Bearer eyJhbGc...
+#
+# 2. GATEWAY VALIDA EL JWT (Spring Security)
+#    - Descarga claves públicas de Keycloak (jwk-set-uri)
+#    - Valida firma del JWT
+#    - Valida expiración (exp claim)
+#    - Valida issuer (iss claim)
+#    - Si falla → 401 Unauthorized
+#    - Si OK → continúa
+#
+# 3. GATEWAY APLICA FILTROS
+#    - JWTPropagationFilter: Agrega JWT al header del request interno
+#    - Rate Limiter: Verifica límites
+#    - Circuit Breaker: Verifica estado del servicio
+#
+# 4. GATEWAY ENRUTA AL MICROSERVICIO
+#    - Consulta Eureka: ¿Dónde está user-service?
+#    - Eureka responde: localhost:8082
+#    - Gateway envía: GET http://localhost:8082/users/me
+#                     Header: Authorization: Bearer eyJhbGc...
+#
+# 5. MICROSERVICIO RECIBE Y VALIDA (Defense in Depth)
+#    - User Service TAMBIÉN valida el JWT
+#    - Doble validación = más seguro
+#    - Si falla → 401
+#    - Si OK → procesa y responde
+#
+# 6. GATEWAY RETORNA RESPUESTA AL CLIENTE
+#    - Response del microservicio → Cliente
+#
+# ===============================================
+# VENTAJAS DE VALIDAR EN GATEWAY:
+# ===============================================
+# ✅ Validación centralizada (un solo punto)
+# ✅ Microservicios no reciben requests inválidos
+# ✅ Reduce carga en microservicios
+# ✅ Fácil de monitorear y auditar
+#
+# ¿POR QUÉ TAMBIÉN VALIDAR EN MICROSERVICIOS?
+# ===============================================
+# ✅ Defense in depth (seguridad en capas)
+# ✅ Microservicios pueden ser llamados directamente (ej: inter-service)
+# ✅ Zero trust architecture
+# ✅ Si el Gateway es comprometido, microservicios siguen seguros

@@ -1,0 +1,49 @@
+# ===============================================
+# CONFIGURACIÓN ESPECÍFICA - PRODUCT SERVICE
+# ===============================================
+
+server:
+  port: 8083
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: product-service
+
+# ===============================================
+# EUREKA CLIENT
+# ===============================================
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+    prefer-ip-address: true
+
+    metadata-map:
+      version: "1.0.0"
+      description: "Product Service - Gestión de productos"
+
+# ===============================================
+# ACTUATOR
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+# ===============================================
+# LOGGING
+# ===============================================
+logging:
+  level:
+    com.example.product: DEBUG
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"

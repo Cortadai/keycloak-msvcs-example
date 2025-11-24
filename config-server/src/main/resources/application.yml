@@ -1,0 +1,52 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+
+  # Perfil activo: native (para leer archivos locales)
+  profiles:
+    active: native
+
+  cloud:
+    config:
+      server:
+        # ==========================================
+        # CONFIGURACIÓN NATIVA - Para archivos locales
+        # ==========================================
+        # Mejor opción para desarrollo en Windows
+        # Lee directamente del sistema de archivos
+        native:
+          search-locations:
+            # Windows: usa file:/// (tres barras)
+            - file:///${user.dir}/infrastructure/config-repo
+            # Alternativa con ruta absoluta (usa esta si la de arriba falla):
+            # - file:///C:/Users/david/Desktop/keycloak/microservices/infrastructure/config-repo
+
+        # ==========================================
+        # CONFIGURACIÓN GIT - Para producción
+        # ==========================================
+        # Descomentado para usar Git repository
+        # git:
+        #   uri: https://github.com/tu-usuario/config-repo
+        #   username: ${GIT_USERNAME}
+        #   password: ${GIT_PASSWORD}
+        #   clone-on-start: true
+        #   search-paths:
+        #     - '/'
+
+# Actuator para health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG
+    org.springframework.boot: INFO

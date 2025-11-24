@@ -1,0 +1,44 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: discovery-server
+
+# ===============================================
+# CONFIGURACIÓN DE EUREKA SERVER
+# ===============================================
+
+eureka:
+  instance:
+    hostname: localhost
+
+  client:
+    # Eureka Server NO se registra a sí mismo
+    register-with-eureka: false
+    fetch-registry: false
+
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+
+  server:
+    # Desactivar self-preservation mode en desarrollo
+    # (En producción, déjalo en true)
+    enable-self-preservation: false
+
+    # Tiempo de espera para eliminar servicios inactivos
+    eviction-interval-timer-in-ms: 10000
+
+# ===============================================
+# ACTUATOR
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO

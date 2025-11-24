@@ -1,0 +1,70 @@
+# ===============================================
+# CONFIGURACIÓN ESPECÍFICA - ORDER SERVICE
+# ===============================================
+
+server:
+  port: 8084
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: order-service
+
+# ===============================================
+# EUREKA CLIENT
+# ===============================================
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+    prefer-ip-address: true
+
+    metadata-map:
+      version: "1.0.0"
+      description: "Order Service - Gestión de órdenes"
+
+# ===============================================
+# FEIGN CLIENT
+# ===============================================
+# Configuración de Feign para llamadas a otros servicios
+feign:
+  client:
+    config:
+      default:
+        # Timeout de conexión (ms)
+        connectTimeout: 5000
+        # Timeout de lectura (ms)
+        readTimeout: 10000
+        # Logging level para requests/responses
+        loggerLevel: FULL
+
+  # Habilitar circuit breaker (requiere Resilience4j)
+  circuitbreaker:
+    enabled: false  # Cambiar a true si quieres circuit breakers
+
+# ===============================================
+# ACTUATOR
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+# ===============================================
+# LOGGING
+# ===============================================
+logging:
+  level:
+    com.example.order: DEBUG
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+    # Logging de Feign clients
+    com.example.order.client: DEBUG
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"

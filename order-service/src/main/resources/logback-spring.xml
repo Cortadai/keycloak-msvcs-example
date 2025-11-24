@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ================================================== -->
+    <!-- CONFIGURACIÓN DE LOGGING PARA ORDER SERVICE       -->
+    <!-- ================================================== -->
+
+    <!-- Nombre del servicio (usado en los archivos de log) -->
+    <property name="SERVICE_NAME" value="order-service" />
+
+    <!-- Directorio de logs -->
+    <property name="LOG_DIR" value="logs/${SERVICE_NAME}" />
+
+    <!-- Patrón de formato para los logs -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+
+    <!-- ================================================== -->
+    <!-- APPENDER: CONSOLA                                  -->
+    <!-- ================================================== -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ================================================== -->
+    <!-- APPENDER: ARCHIVO (todos los logs)                 -->
+    <!-- ================================================== -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/application.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Rotación diaria -->
+            <fileNamePattern>${LOG_DIR}/application.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- Mantener logs por 30 días -->
+            <maxHistory>30</maxHistory>
+            <!-- Tamaño máximo total de logs: 5GB -->
+            <totalSizeCap>5GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ================================================== -->
+    <!-- APPENDER: ARCHIVO DE ERRORES                       -->
+    <!-- ================================================== -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/error.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ================================================== -->
+    <!-- LOGGERS ESPECÍFICOS                                -->
+    <!-- ================================================== -->
+
+    <!-- Order Service -->
+    <logger name="com.example.order" level="DEBUG" />
+
+    <!-- Spring Framework -->
+    <logger name="org.springframework" level="INFO" />
+    <logger name="org.springframework.web" level="INFO" />
+    <logger name="org.springframework.security" level="INFO" />
+
+    <!-- Spring Cloud -->
+    <logger name="org.springframework.cloud" level="INFO" />
+
+    <!-- Feign (para ver llamadas inter-service) -->
+    <logger name="feign" level="DEBUG" />
+
+    <!-- Hibernate/JPA -->
+    <logger name="org.hibernate" level="WARN" />
+    <logger name="org.hibernate.SQL" level="DEBUG" />
+
+    <!-- ================================================== -->
+    <!-- PERFILES                                           -->
+    <!-- ================================================== -->
+
+    <!-- PERFIL: dev (desarrollo) -->
+    <springProfile name="dev">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+    </springProfile>
+
+    <!-- PERFIL: prod (producción) -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+    </springProfile>
+
+    <!-- PERFIL: default (cuando no se especifica perfil) -->
+    <springProfile name="default">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ERROR_FILE" />
+        </root>
+    </springProfile>
+
+</configuration>

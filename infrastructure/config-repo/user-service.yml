@@ -1,0 +1,93 @@
+# ===============================================
+# CONFIGURACIÓN ESPECÍFICA - USER SERVICE
+# ===============================================
+#
+# Este archivo se combina con application.yml (compartido)
+#
+# CONFIGURACIÓN FINAL = application.yml + user-service.yml
+#
+# application.yml contiene:
+#   - JWT validation (issuer-uri, jwk-set-uri)
+#   - Eureka client config
+#
+# Este archivo contiene:
+#   - Puerto del servicio
+#   - Configuraciones específicas del User Service
+
+server:
+  port: 8082
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: user-service
+
+
+# ===============================================
+# EUREKA CLIENT
+# ===============================================
+# Esta config se combina con la de application.yml
+eureka:
+  instance:
+    # Nombre que aparece en Eureka
+    instance-id: ${spring.application.name}:${random.value}
+
+    # Preferir IP sobre hostname (útil en Docker)
+    prefer-ip-address: true
+
+    # Metadata adicional (opcional)
+    metadata-map:
+      version: "1.0.0"
+      description: "User Service - Gestión de usuarios"
+
+# ===============================================
+# ACTUATOR
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        # Endpoints expuestos
+        # SecurityConfig permite /actuator/health y /actuator/info sin JWT
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+# ===============================================
+# LOGGING
+# ===============================================
+logging:
+  level:
+    com.example.user: DEBUG
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+
+# ===============================================
+# NOTAS IMPORTANTES
+# ===============================================
+#
+# 1. JWT VALIDATION:
+#    No se configura aquí, viene de application.yml:
+#    - spring.security.oauth2.resourceserver.jwt.issuer-uri
+#    - spring.security.oauth2.resourceserver.jwt.jwk-set-uri
+#
+# 2. SEGURIDAD:
+#    SecurityConfig.java define qué endpoints requieren JWT
+#
+# 3. ROLES:
+#    @PreAuthorize en los controllers valida roles
+#
+# 4. EUREKA:
+#    Se registra automáticamente en http://localhost:8761
+#
+# 5. CONFIG REFRESH:
+#    Si cambias este archivo, puedes:
+#    - Opción A: Reiniciar el servicio
+#    - Opción B: POST http://localhost:8082/actuator/refresh (requiere actuator)
+#    - Opción C: Usar Spring Cloud Bus para refresh automático

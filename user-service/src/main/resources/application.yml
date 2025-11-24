@@ -1,0 +1,50 @@
+# ===============================================
+# USER SERVICE - Application Configuration
+# ===============================================
+
+spring:
+  application:
+    name: user-service
+
+  # ===============================================
+  # CONFIG SERVER IMPORT (Spring Cloud 2021+)
+  # ===============================================
+  # Conecta con Config Server ANTES de arrancar
+  config:
+    import: "configserver:http://localhost:8888"
+    # "configserver:" especifica que es un Config Server
+    # SIN "optional:" - FALLA si Config Server no responde (recomendado para producción)
+
+  # ===============================================
+  # SERVER PORT
+  # ===============================================
+  # NOTA: Este puerto puede ser sobrescrito por Config Server
+  # si user-service.yml en config-repo tiene un puerto diferente
+server:
+  port: 8082
+
+# ===============================================
+# ACTUATOR
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# ===============================================
+# LOGGING
+# ===============================================
+logging:
+  level:
+    # Ver conexión a Config Server
+    org.springframework.cloud.config.client: DEBUG
+    # Ver validación de JWT
+    org.springframework.security: DEBUG
+    # Ver registro en Eureka
+    com.netflix.discovery: INFO
+    # Logs de la aplicación
+    com.example.user: DEBUG

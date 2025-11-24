@@ -1,0 +1,165 @@
+# ===============================================
+# CONFIGURACIÓN COMPARTIDA POR TODOS LOS SERVICIOS
+# ===============================================
+# Este archivo se aplica a TODOS los microservicios
+# Contiene la configuración JWT que todos necesitan
+
+# ===============================================
+# 🔐 CONFIGURACIÓN DE SEGURIDAD JWT
+# ===============================================
+# Esta es la parte MÁS IMPORTANTE para entender
+# cómo los microservicios validan tokens JWT
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # ==========================================
+          # issuer-uri: ¿Quién emitió el token?
+          # ==========================================
+          # Keycloak incluye un "iss" claim en cada JWT que genera.
+          # Spring Security verifica que coincida con este valor.
+          #
+          # Formato: http://{keycloak-host}/realms/{realm-name}
+          #
+          # ⚠️ IMPORTANTE: Este debe coincidir EXACTAMENTE con el
+          # claim "iss" del JWT, sino falla la validación
+          #
+          # 🔧 CONFIGURACIÓN POR VARIABLES DE ENTORNO:
+          # Variable: KEYCLOAK_ISSUER_URI
+          # Desarrollo: http://localhost:8080/realms/mi-realm
+          # Producción: https://keycloak.production.com/realms/production-realm
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/mi-realm}
+
+          # ==========================================
+          # jwk-set-uri: ¿Dónde están las claves públicas?
+          # ==========================================
+          # Keycloak firma los JWT con su clave PRIVADA.
+          # Los microservicios necesitan la clave PÚBLICA para validar la firma.
+          #
+          # Keycloak publica sus claves públicas en este endpoint (JWKS).
+          # Spring Security descarga estas claves y las usa para validar.
+          #
+          # Spring hace:
+          # 1. Descarga las claves de este endpoint
+          # 2. Cachea las claves
+          # 3. Valida la firma del JWT usando la clave pública
+          # 4. Si la firma es válida → Token auténtico
+          # 5. Si la firma es inválida → Token rechazado (401)
+          #
+          # 🔧 CONFIGURACIÓN POR VARIABLES DE ENTORNO:
+          # Variable: KEYCLOAK_JWK_SET_URI
+          # Desarrollo: http://localhost:8080/realms/mi-realm/protocol/openid-connect/certs
+          # Producción: https://keycloak.production.com/realms/production-realm/protocol/openid-connect/certs
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/mi-realm/protocol/openid-connect/certs}
+
+# ===============================================
+# 🔐 JWT AUDIENCE VALIDATION
+# ===============================================
+# Validación del claim "aud" para prevenir token reuse
+#
+# 🔧 CONFIGURACIÓN POR VARIABLES DE ENTORNO:
+# Variable: JWT_AUDIENCE
+# Desarrollo: spring-boot-client
+# Producción: production-client
+jwt:
+  audience: ${JWT_AUDIENCE:spring-boot-client}
+
+# ===============================================
+# 🌍 CORS CONFIGURATION
+# ===============================================
+# Configuración de CORS (Cross-Origin Resource Sharing)
+# Permite que frontends en otros dominios hagan requests al backend
+#
+# 🔧 CONFIGURACIÓN POR VARIABLES DE ENTORNO:
+# Variables: CORS_ALLOWED_ORIGINS, CORS_ALLOWED_METHODS, etc.
+# Ver .env.example para más detalles
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:3000,http://localhost:8080}
+  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS,PATCH}
+  allowed-headers: ${CORS_ALLOWED_HEADERS:Authorization,Content-Type,X-Requested-With,Accept,Origin}
+  exposed-headers: ${CORS_EXPOSED_HEADERS:Authorization,X-Total-Count,X-Page-Number}
+  max-age: ${CORS_MAX_AGE:3600}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+
+# ===============================================
+# EUREKA CLIENT - Service Discovery
+# ===============================================
+# Configuración para que los servicios se registren en Eureka
+#
+# 🔧 CONFIGURACIÓN POR VARIABLES DE ENTORNO:
+# Variable: EUREKA_URL
+# Desarrollo: http://localhost:8761/eureka/
+# Producción: http://eureka.production.com:8761/eureka/
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+
+  instance:
+    # Usar IP en vez de hostname (mejor para contenedores)
+    prefer-ip-address: true
+
+    # Configuración de health check
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+# ===============================================
+# ACTUATOR - Monitoring y Health Checks
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+  health:
+    circuitbreakers:
+      enabled: true
+
+# ===============================================
+# LOGGING
+# ===============================================
+logging:
+  level:
+    root: INFO
+    com.example: DEBUG
+    org.springframework.security: DEBUG  # Ver logs de seguridad (útil para debugging)
+    org.springframework.security.oauth2: DEBUG
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# ===============================================
+# ¿POR QUÉ ESTA CONFIGURACIÓN ESTÁ CENTRALIZADA?
+# ===============================================
+#
+# ANTES (sin Config Server):
+# ❌ Cada microservicio tiene su propia copia de issuer-uri, jwk-set-uri
+# ❌ Si cambia el realm de Keycloak → actualizar 5+ archivos
+# ❌ Inconsistencias entre servicios
+# ❌ Secrets duplicados
+#
+# AHORA (con Config Server):
+# ✅ Una sola fuente de verdad
+# ✅ Cambio en un solo lugar
+# ✅ Todos los servicios obtienen la misma config
+# ✅ Secrets centralizados
+# ✅ Versionado en Git (puedes hacer rollback)
+#
+# FLUJO CUANDO UN SERVICIO INICIA:
+# 1. Servicio: "Hola Config Server, soy 'user-service'"
+# 2. Config Server: "OK, aquí está tu config (application.yml + user-service.yml)"
+# 3. Servicio: "Perfecto, ahora sé cómo validar JWT"
+# 4. Spring Security se configura automáticamente
+# 5. Servicio listo para recibir requests con JWT

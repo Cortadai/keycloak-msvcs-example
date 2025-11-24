@@ -1,0 +1,38 @@
+# ===============================================
+# API GATEWAY - Application Configuration
+# ===============================================
+
+spring:
+  application:
+    name: gateway
+
+  # ===============================================
+  # CONFIG SERVER IMPORT
+  # ===============================================
+  config:
+    import: "configserver:http://localhost:8888"
+
+server:
+  port: 8081
+
+# ===============================================
+# ACTUATOR
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# ===============================================
+# LOGGING
+# ===============================================
+logging:
+  level:
+    org.springframework.cloud.config.client: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: INFO
