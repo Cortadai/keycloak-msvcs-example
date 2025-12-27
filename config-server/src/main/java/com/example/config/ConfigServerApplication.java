@@ -3,6 +3,8 @@ package com.example.config;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.config.server.EnableConfigServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Config Server - Servidor de Configuración Centralizada
@@ -42,18 +44,20 @@ import org.springframework.cloud.config.server.EnableConfigServer;
 @EnableConfigServer  // ← Habilita funcionalidad de Config Server
 public class ConfigServerApplication {
 
+    private static final Logger log = LoggerFactory.getLogger(ConfigServerApplication.class);
+
     public static void main(String[] args) {
         SpringApplication.run(ConfigServerApplication.class, args);
-        System.out.println("=========================================");
-        System.out.println("✓ Config Server iniciado en puerto 8888");
-        System.out.println("=========================================");
+        log.info("=========================================");
+        log.info("✓ Config Server iniciado en puerto 8888");
+        log.info("=========================================");
         System.out.println();
-        System.out.println("📁 Sirviendo configuraciones desde: file:../infrastructure/config-repo");
+        log.info("📁 Sirviendo configuraciones desde: file:../infrastructure/config-repo");
         System.out.println();
-        System.out.println("Endpoints disponibles:");
-        System.out.println("  http://localhost:8888/application/default");
-        System.out.println("  http://localhost:8888/gateway/default");
-        System.out.println("  http://localhost:8888/user-service/default");
-        System.out.println("=========================================");
+        log.info("Endpoints disponibles:");
+        log.info("  http://localhost:8888/application/default");
+        log.info("  http://localhost:8888/gateway/default");
+        log.info("  http://localhost:8888/user-service/default");
+        log.info("=========================================");
     }
 }

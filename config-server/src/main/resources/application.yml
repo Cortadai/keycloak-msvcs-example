@@ -19,10 +19,8 @@ spring:
         # Lee directamente del sistema de archivos
         native:
           search-locations:
-            # Windows: usa file:/// (tres barras)
-            - file:///${user.dir}/infrastructure/config-repo
-            # Alternativa con ruta absoluta (usa esta si la de arriba falla):
-            # - file:///C:/Users/david/Desktop/keycloak/microservices/infrastructure/config-repo
+            # Ruta absoluta al config-repo
+            - file:///C:/Users/david/Desktop/keycloak-msvcs-example/infrastructure/config-repo
 
         # ==========================================
         # CONFIGURACIÓN GIT - Para producción
