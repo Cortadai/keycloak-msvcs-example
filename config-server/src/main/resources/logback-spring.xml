@@ -5,8 +5,8 @@
     <!-- PROPIEDADES -->
     <!-- =============================================== -->
 
-    <!-- Nombre del servicio (cambiar según el servicio) -->
-    <property name="SERVICE_NAME" value="api-gateway" />
+    <!-- Nombre del servicio -->
+    <property name="SERVICE_NAME" value="config-server" />
 
     <!-- Directorio de logs -->
     <property name="LOG_DIR" value="logs" />
@@ -40,11 +40,8 @@
         </encoder>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- Rotación diaria -->
             <fileNamePattern>${LOG_DIR}/${SERVICE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <!-- Mantener logs de los últimos 30 días -->
             <maxHistory>30</maxHistory>
-            <!-- Tamaño máximo total de logs: 5GB -->
             <totalSizeCap>5GB</totalSizeCap>
         </rollingPolicy>
     </appender>
@@ -63,7 +60,6 @@
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
 
-        <!-- Solo logs de nivel ERROR -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>ERROR</level>
             <onMatch>ACCEPT</onMatch>
@@ -75,69 +71,36 @@
     <!-- LOGGERS -->
     <!-- =============================================== -->
 
-    <!-- Logger para nuestro código (com.example) -->
     <logger name="com.example" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
         <appender-ref ref="ERROR_FILE" />
     </logger>
 
-    <!-- Logger para Spring Security (útil para debugging de JWT) -->
-    <logger name="org.springframework.security" level="INFO" additivity="false">
+    <!-- Logger para Spring Cloud Config -->
+    <logger name="org.springframework.cloud.config" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
     </logger>
 
-    <!-- Logger para validación de JWT (más detalle) -->
-    <logger name="org.springframework.security.oauth2" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
-    </logger>
-
-    <!-- Logger para Spring Web (requests HTTP) -->
-    <logger name="org.springframework.web" level="INFO" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
-    </logger>
-
-    <!-- Logger para Feign (llamadas entre microservicios) -->
-    <logger name="feign" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
-    </logger>
-
-    <!-- Logger para Eureka Client -->
-    <logger name="com.netflix.discovery" level="INFO" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
-    </logger>
-
-    <!-- Logger raíz (para todo lo demás) -->
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
         <appender-ref ref="ERROR_FILE" />
     </root>
 
-    <!-- =============================================== -->
     <!-- PROFILES -->
-    <!-- =============================================== -->
-
-    <!-- DESARROLLO: Solo consola, nivel DEBUG -->
     <springProfile name="dev">
         <root level="DEBUG">
             <appender-ref ref="CONSOLE" />
         </root>
     </springProfile>
 
-    <!-- PRODUCCIÓN: Archivos, nivel INFO -->
     <springProfile name="prod">
         <root level="INFO">
             <appender-ref ref="FILE" />
             <appender-ref ref="ERROR_FILE" />
         </root>
-
-        <!-- En producción, reducir logging de Spring -->
         <logger name="org.springframework" level="WARN" />
     </springProfile>
 
