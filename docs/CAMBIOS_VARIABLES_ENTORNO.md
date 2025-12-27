@@ -83,29 +83,46 @@ cp .env.example .env
 
 ---
 
-### 4. Script de Inicio Mejorado
+### 4. Proceso de Inicio Manual
 
-**Archivo**: `/start-all-with-env.sh`
+**Descripción**: Proceso de inicio ordenado de microservicios.
 
-**Descripción**: Nuevo script que:
+**Pasos**:
 
-1. ✅ Carga variables desde `.env` automáticamente
-2. ✅ Valida que todas las variables requeridas estén presentes
-3. ✅ Muestra la configuración cargada
-4. ✅ Inicia todos los servicios con las variables exportadas
+1. ✅ Cargar variables desde `.env`
+2. ✅ Iniciar servicios en orden correcto
+3. ✅ Verificar registro en Eureka
 
-**Uso**:
+**Cargar variables**:
 ```bash
-./start-all-with-env.sh
+# Linux/Mac
+export $(cat .env | grep -v '^#' | xargs)
+
+# Windows PowerShell
+Get-Content .env | Where-Object { $_ -notmatch '^#' -and $_ -match '=' } | ForEach-Object {
+    $name, $value = $_.split('=', 2)
+    Set-Item -Path "env:$name" -Value $value
+}
 ```
 
-**Ventajas sobre script original**:
-- Validación de variables antes de iniciar
-- Feedback claro sobre la configuración cargada
-- Detección automática de archivo `.env` faltante
-- Mejor manejo de errores
+**Orden de inicio** (abrir terminales separadas):
+```bash
+# 1. Config Server (puerto 8888) - PRIMERO
+cd config-server && mvn spring-boot:run
 
-**Impacto**: Mejora la experiencia de desarrollo
+# 2. Discovery Server (puerto 8761) - SEGUNDO
+cd discovery-server && mvn spring-boot:run
+
+# 3. API Gateway (puerto 8081)
+cd api-gateway && mvn spring-boot:run
+
+# 4-6. Microservicios (pueden ser en paralelo)
+cd user-service && mvn spring-boot:run
+cd product-service && mvn spring-boot:run
+cd order-service && mvn spring-boot:run
+```
+
+**Impacto**: Control total sobre el proceso de inicio
 
 ---
 
@@ -141,9 +158,23 @@ cp .env.example .env
 nano .env
 ```
 
-3. **Iniciar servicios**:
+3. **Cargar variables de entorno**:
 ```bash
-./start-all-with-env.sh
+# Linux/Mac
+export $(cat .env | grep -v '^#' | xargs)
+
+# Windows PowerShell
+Get-Content .env | Where-Object { $_ -notmatch '^#' -and $_ -match '=' } | ForEach-Object {
+    $name, $value = $_.split('=', 2); Set-Item -Path "env:$name" -Value $value
+}
+```
+
+4. **Iniciar servicios en orden** (terminales separadas):
+```bash
+cd config-server && mvn spring-boot:run      # Esperar que inicie
+cd discovery-server && mvn spring-boot:run   # Esperar que inicie
+cd api-gateway && mvn spring-boot:run
+cd user-service && mvn spring-boot:run
 ```
 
 ### Staging
@@ -156,10 +187,7 @@ JWT_AUDIENCE=staging-client
 EUREKA_URL=http://eureka.staging.example.com:8761/eureka/
 ```
 
-2. **Iniciar**:
-```bash
-./start-all-with-env.sh
-```
+2. **Cargar variables e iniciar** (mismo proceso que desarrollo)
 
 ### Producción
 
@@ -228,18 +256,32 @@ git status
 # .env NO debe aparecer en la lista
 ```
 
-### 2. Probar el script:
+### 2. Verificar que las variables están cargadas:
 ```bash
-./start-all-with-env.sh
-# Debe mostrar las variables cargadas
+# Linux/Mac
+echo $KEYCLOAK_ISSUER_URI
+
+# Windows PowerShell
+echo $env:KEYCLOAK_ISSUER_URI
+# Debe mostrar el valor configurado
 ```
 
 ### 3. Verificar que los servicios usan las variables:
 ```bash
 # Revisar logs del config-server
+# Linux/Mac
 tail -f logs/config-server.log
 
+# Windows PowerShell
+Get-Content logs/config-server.log -Wait
+
 # Debe mostrar las URLs configuradas vía variables
+```
+
+### 4. Verificar registro en Eureka:
+```
+Acceder a http://localhost:8761
+Verificar que todos los servicios aparecen registrados
 ```
 
 ---
@@ -252,22 +294,14 @@ tail -f logs/config-server.log
 
 ---
 
-## 🎯 Próximos Pasos
+## 🎯 Estado de Todas las Mejoras (Actualizado 27 Dic 2025)
 
-Mejoras implementadas:
-- ✅ **#1 HARDCODED URLS** - COMPLETADA
+| # | Mejora | Estado |
+|---|--------|--------|
+| 1 | HARDCODED URLS | ✅ COMPLETADA |
+| 2 | .gitignore | ✅ COMPLETADA |
+| 3 | CORS Configuration | ✅ COMPLETADA |
+| 4 | Logging SLF4J | ✅ COMPLETADA |
+| 5 | Tests de Seguridad | ⏸️ OMITIDA (POC) |
 
-Próximas mejoras críticas pendientes:
-- ⏸️ **#2 CORS Configuration** - Pendiente
-- ⏸️ **#3 Logging con SLF4J** - Pendiente
-- ⏸️ **#4 Tests de Seguridad** - Pendiente
-
-Ver `MEJORAS.md` para el plan completo.
-
----
-
-**Implementado**: 23 Noviembre 2025
-**Estado**: ✅ COMPLETADO
-**Impacto**: 🔴 CRÍTICO
-**Esfuerzo**: 2 horas
-**Prioridad**: 1
+Ver `MEJORAS.md` e `IMPLEMENTACIONES_COMPLETADAS.md` para detalles.

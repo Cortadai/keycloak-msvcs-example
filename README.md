@@ -295,7 +295,3 @@ curl http://localhost:8081/api/orders -H "Authorization: Bearer $TOKEN"
 - Cada servicio expone `/actuator/health`
 - Logs estructurados en JSON
 - Correlation IDs para tracing
-
----
-
-**Siguiente**: Comienza por [Config Server](config-server/README.md)

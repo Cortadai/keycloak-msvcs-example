@@ -542,17 +542,6 @@ curl http://localhost:8761/eureka/apps
 
 ---
 
-## 📚 Próximos Pasos
-
-### Mejoras sugeridas:
-1. **Base de datos**: Agregar PostgreSQL para persistir órdenes
-2. **Circuit Breaker**: Habilitar Resilience4j para manejo de fallos
-3. **Distributed Tracing**: Agregar Sleuth + Zipkin para tracing
-4. **Logging agregado**: Agregar ELK stack (Elasticsearch + Logstash + Kibana)
-5. **API Documentation**: Agregar Swagger/OpenAPI a cada servicio
-6. **Docker Compose**: Containerizar todos los servicios
-7. **Kubernetes**: Deploy en Kubernetes con Istio service mesh
-
 ### Explorar:
 - JWT con claims custom (agregar tenant_id, permissions, etc.)
 - Refresh tokens (renovar tokens sin re-autenticar)
@@ -564,7 +553,7 @@ curl http://localhost:8761/eureka/apps
 
 ## ✅ Resumen
 
-Has implementado con éxito:
+Implementado con éxito:
 
 ✅ **Config Server** - Configuración centralizada
 ✅ **Eureka** - Service discovery
@@ -588,5 +577,3 @@ Keycloak → Cliente → Gateway → Microservicio → Microservicio
  genera    obtiene   valida       valida         valida
   JWT       JWT       JWT          JWT            JWT
 ```
-
-🎉 **¡Felicidades! Ahora entiendes cómo fluye el JWT en microservicios.**

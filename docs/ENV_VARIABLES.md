@@ -227,17 +227,41 @@ vim .env
 # o usar tu editor favorito
 ```
 
-3. **Iniciar servicios con el script mejorado**:
+3. **Cargar variables de entorno**:
 
 ```bash
-./start-all-with-env.sh
+# Linux/Mac - Exportar variables del .env
+export $(cat .env | grep -v '^#' | xargs)
+
+# Windows PowerShell - Cargar variables del .env
+Get-Content .env | Where-Object { $_ -notmatch '^#' -and $_ -match '=' } | ForEach-Object {
+    $name, $value = $_.split('=', 2)
+    Set-Item -Path "env:$name" -Value $value
+}
 ```
 
-El script automáticamente:
-- ✅ Carga las variables del archivo `.env`
-- ✅ Valida que todas las variables requeridas estén presentes
-- ✅ Exporta las variables al entorno
-- ✅ Inicia todos los servicios
+4. **Iniciar servicios en orden** (esperar que cada uno inicie antes del siguiente):
+
+```bash
+# 1. Config Server (puerto 8888) - Primero siempre
+cd config-server && mvn spring-boot:run
+
+# 2. Discovery Server (puerto 8761)
+cd discovery-server && mvn spring-boot:run
+
+# 3. API Gateway (puerto 8081)
+cd api-gateway && mvn spring-boot:run
+
+# 4. Microservicios (pueden iniciarse en paralelo)
+cd user-service && mvn spring-boot:run
+cd product-service && mvn spring-boot:run
+cd order-service && mvn spring-boot:run
+```
+
+**Orden de inicio importante**:
+- ✅ Config Server debe estar UP antes que los demás
+- ✅ Discovery Server debe estar UP antes que Gateway y microservicios
+- ✅ Verificar en http://localhost:8761 que los servicios se registran
 
 ### Ventajas del archivo .env
 
@@ -263,8 +287,12 @@ export KEYCLOAK_JWK_SET_URI=https://keycloak.production.com/realms/production-re
 export JWT_AUDIENCE=production-client
 export EUREKA_URL=http://eureka.production.com:8761/eureka/
 
-# Iniciar servicios
-./start-all.sh
+# Iniciar servicios en orden
+cd config-server && mvn spring-boot:run &
+# Esperar que inicie, luego:
+cd discovery-server && mvn spring-boot:run &
+cd api-gateway && mvn spring-boot:run &
+cd user-service && mvn spring-boot:run &
 ```
 
 #### En Windows (PowerShell):
@@ -276,8 +304,20 @@ $env:KEYCLOAK_JWK_SET_URI="https://keycloak.production.com/realms/production-rea
 $env:JWT_AUDIENCE="production-client"
 $env:EUREKA_URL="http://eureka.production.com:8761/eureka/"
 
-# Iniciar servicios
-mvn spring-boot:run
+# Iniciar servicios en orden (abrir terminales separadas)
+# Terminal 1:
+cd config-server; mvn spring-boot:run
+
+# Terminal 2 (esperar que config-server inicie):
+cd discovery-server; mvn spring-boot:run
+
+# Terminal 3 (esperar que discovery-server inicie):
+cd api-gateway; mvn spring-boot:run
+
+# Terminales 4-6:
+cd user-service; mvn spring-boot:run
+cd product-service; mvn spring-boot:run
+cd order-service; mvn spring-boot:run
 ```
 
 #### En Docker/Kubernetes:
@@ -377,13 +417,22 @@ KEYCLOAK_ISSUER_URI=http://localhost:9080/realms/mi-realm
 
 ### Problema: "Variable XXX no está configurada"
 
-**Síntoma**: El script `start-all-with-env.sh` muestra un error sobre variables faltantes.
+**Síntoma**: El microservicio no puede leer la variable de entorno.
 
 **Solución**:
 
 1. Verificar que el archivo `.env` existe
 2. Verificar que la variable está definida en `.env`
 3. Verificar que no hay espacios extra: `VAR=valor` (no `VAR = valor`)
+4. Verificar que exportaste las variables antes de iniciar:
+```bash
+# Linux/Mac
+export $(cat .env | grep -v '^#' | xargs)
+echo $KEYCLOAK_ISSUER_URI  # Debe mostrar el valor
+
+# Windows PowerShell
+echo $env:KEYCLOAK_ISSUER_URI  # Debe mostrar el valor
+```
 
 ### Problema: "Issuer mismatch"
 
@@ -434,12 +483,22 @@ curl $KEYCLOAK_JWK_SET_URI
 
 **Solución**:
 
-1. Verificar que usaste `./start-all-with-env.sh` (no `start-all.sh`)
-2. Exportar manualmente:
+1. Verificar que exportaste las variables **antes** de iniciar los servicios:
 
 ```bash
+# Linux/Mac
 export $(cat .env | grep -v '^#' | xargs)
-./start-all.sh
+
+# Windows PowerShell
+Get-Content .env | Where-Object { $_ -notmatch '^#' -and $_ -match '=' } | ForEach-Object {
+    $name, $value = $_.split('=', 2)
+    Set-Item -Path "env:$name" -Value $value
+}
+```
+
+2. Verificar que las variables están en el entorno actual:
+```bash
+echo $KEYCLOAK_ISSUER_URI  # Debe mostrar el valor, no vacío
 ```
 
 3. Verificar sintaxis del `.env` (sin comillas, sin espacios extra)
@@ -463,12 +522,7 @@ Antes de desplegar, verifica:
 - [ ] Todas las variables configuradas
 - [ ] URLs usan HTTPS en producción
 - [ ] Archivo `.env` está en `.gitignore`
-- [ ] Variables validadas con el script `start-all-with-env.sh`
+- [ ] Variables exportadas al entorno antes de iniciar servicios
+- [ ] Servicios iniciados en orden correcto (Config → Discovery → Gateway → Microservicios)
 - [ ] Tokens JWT decodificados para verificar claims `iss` y `aud`
 - [ ] JWK Set URI accesible desde los servicios
-
----
-
-**Última actualización**: 23 Noviembre 2025
-**Versión**: 1.0
-**Autor**: Implementación de mejora crítica #1 del archivo MEJORAS.md

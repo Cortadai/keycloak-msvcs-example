@@ -332,8 +332,3 @@ Revisa los logs del servicio:
 5. Obtén nuevo token
 6. Verifica que tenga `"aud": "spring-boot-client"`
 
-**Ya actualicé tu configuración para esperar:** `spring-boot-client`
-
----
-
-¿Necesitas ayuda con algún paso específico? ¡Avísame y te guío!
