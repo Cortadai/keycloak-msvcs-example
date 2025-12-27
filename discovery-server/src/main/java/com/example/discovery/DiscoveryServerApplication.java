@@ -3,6 +3,8 @@ package com.example.discovery;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Eureka Discovery Server - Registro de Servicios
@@ -54,18 +56,20 @@ import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
 @EnableEurekaServer  // ← Habilita funcionalidad de Eureka Server
 public class DiscoveryServerApplication {
 
+    private static final Logger log = LoggerFactory.getLogger(DiscoveryServerApplication.class);
+
     public static void main(String[] args) {
         SpringApplication.run(DiscoveryServerApplication.class, args);
-        System.out.println("============================================");
-        System.out.println("✓ Eureka Discovery Server iniciado");
-        System.out.println("============================================");
+        log.info("============================================");
+        log.info("✓ Eureka Discovery Server iniciado");
+        log.info("============================================");
         System.out.println();
-        System.out.println("🌐 Dashboard UI: http://localhost:8761");
+        log.info("🌐 Dashboard UI: http://localhost:8761");
         System.out.println();
-        System.out.println("Los microservicios se registrarán aquí automáticamente");
-        System.out.println("cuando inicien y tengan esta configuración:");
-        System.out.println("  eureka.client.serviceUrl.defaultZone=http://localhost:8761/eureka/");
+        log.info("Los microservicios se registrarán aquí automáticamente");
+        log.info("cuando inicien y tengan esta configuración:");
+        log.info("  eureka.client.serviceUrl.defaultZone=http://localhost:8761/eureka/");
         System.out.println();
-        System.out.println("============================================");
+        log.info("============================================");
     }
 }
